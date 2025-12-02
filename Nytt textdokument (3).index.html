@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L´EPOQUÉ - Exklusiva Klockor</title>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- KONFIGURATION ---
+        let firebaseConfig = {};
+        // 1. Försök hitta config i den automatiska miljön
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } 
+        // 2. Försök hitta config i URL (om man öppnar filen manuellt)
+        else {
+             firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get("firebase_config") || "{}");
+        }
+
+        // Om ingen config hittas, visa fel (Detta händer om man kör lokalt utan setup)
+        if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+            console.warn("Varning: Ingen Firebase-config hittades. Formuläret kommer inte kunna skickas om du kör detta lokalt utanför miljön.");
+        } else {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            
+            // App ID för att matcha admin-sidan
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'lepoque-live-v1';
+
+            // Autentisering
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    console.log("Databasanslutning lyckades.");
+                } catch (err) {
+                    console.error("Auth fel:", err);
+                }
+            };
+            initAuth();
+
+            // Skicka funktionen
+            window.sendToDatabase = async function(event) {
+                event.preventDefault(); 
+                
+                const btn = event.target.querySelector('button');
+                const originalText = btn.innerText;
+                btn.innerText = "Skickar...";
+                btn.disabled = true;
+
+                const form = event.target;
+                const namn = form.namn.value;
+                const email = form.email.value;
+                const meddelande = form.meddelande.value;
+
+                if (!auth.currentUser) await initAuth();
+
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'inquiries'), {
+                        namn: namn,
+                        email: email,
+                        meddelande: meddelande,
+                        tid: serverTimestamp(),
+                        status: 'ny'
+                    });
+
+                    alert("Tack! Ditt meddelande har skickats till arkivet.");
+                    form.reset();
+                } catch (error) {
+                    console.error("Fel vid sparning:", error);
+                    alert("Kunde inte skicka: " + error.message);
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }
+        }
+    </script>
+    <style>
+        /* --- GRUNDLÄGGANDE STIL --- */
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --accent-color: #333333;
+            --font-heading: 'Georgia', 'Times New Roman', serif;
+            --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        a:hover {
+            opacity: 0.7;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        header.nav-hidden {
+            transform: translateY(-100%);
+        }
+
+        .logo-container {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .site-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: bold;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        nav ul li a {
+            padding-bottom: 5px;
+            border-bottom: 2px solid transparent;
+        }
+
+        nav ul li a.active {
+            border-bottom: 2px solid #000;
+        }
+
+        /* --- PAGE STRUCTURE (SPA) --- */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease;
+            flex: 1;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- HERO --- */
+        .hero {
+            position: relative;
+            padding: 4rem 1rem;
+            text-align: center;
+            background-color: #fafafa;
+        }
+        
+        /* --- CONTENT --- */
+        .content-section {
+            padding: 4rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .content-image {
+            width: 100%;
+            border-radius: 4px;
+        }
+
+        .content-text {
+            text-align: left;
+        }
+
+        .content-text h2 {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: normal;
+        }
+
+        .content-text p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: #444;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #000;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #fff;
+            color: #000;
+        }
+
+        /* --- TABLES --- */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .specs-table th, .specs-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .specs-table th {
+            font-weight: bold;
+            width: 40%;
+            color: #333;
+        }
+
+        /* --- OM OSS --- */
+        .about-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 4rem 1rem;
+            text-align: center;
+        }
+
+        /* --- DESIGN SECTION --- */
+        .design-section {
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            padding: 6rem 1rem;
+        }
+
+        .design-section h2 {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .email-link {
+            font-weight: bold;
+            font-size: 1.3rem;
+            border-bottom: 1px solid #fff;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 2rem auto;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #eee;
+            margin-top: auto;
+        }
+
+        /* --- RESPONSIVITET --- */
+        @media (max-width: 768px) {
+            nav ul {
+                gap: 1rem;
+                font-size: 0.75rem;
+            }
+            
+            .content-section {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 2rem;
+            }
+
+            .content-text {
+                text-align: center;
+                order: 2;
+            }
+            
+            .content-image-wrapper {
+                order: 1;
+            }
+
+            .design-section h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container" onclick="navigate('home')">
+            <div class="site-title">L´EPOQUÉ</div>
+        </div>
+        <nav>
+            <ul>
+                <li><a onclick="navigate('home')" id="nav-home" class="active">Hem</a></li>
+                <li><a onclick="navigate('about')" id="nav-about">Om oss</a></li>
+                <li><a onclick="navigate('details')" id="nav-details">Detaljer</a></li>
+                <li><a onclick="navigate('booking')" id="nav-booking">Boka möte</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- 1. HEM -->
+    <main id="home" class="page active">
+        <section style="text-align: center; max-width: 800px; margin: 4rem auto 6rem auto; padding: 0 1rem;">
+            <h1 style="font-family: var(--font-heading); font-size: 2.8rem; letter-spacing: 2px; margin-bottom: 1.5rem; font-weight: normal; color: #111;">
+                Tidlös Elegans. Modern Precision.
+            </h1>
+            <p style="font-size: 1.15rem; color: #555; line-height: 1.8; font-weight: 300;">
+                L´EPOQUÉ är mer än bara en klocka – det är en symbol för hantverk och individualitet. 
+                Vi förenar klassisk design med kompromisslös kvalitet för att skapa följeslagare som varar genom generationer. 
+                Din tid är värdefull, mät den med stil.
+            </p>
+        </section>
+
+        <section class="content-section">
+            <div class="content-image-wrapper">
+                <img src="https://e28874c360.cbaul-cdnwnd.com/43537c620e9a21ebe5dd33a099267bcf/200000032-6c8ba6c8bc/bakifr%C3%A5n%20zoom%20zoom.png?ph=e28874c360" alt="Automatiskt Urverk" class="content-image">
+            </div>
+            <div class="content-text">
+                <h2>Automatiskt Ur</h2>
+                <p>
+                    Vi använder NH35A och NH05A-urverken för dess beprövade pålitlighet, exakta gång och långa livslängd. Det är ett robust och stabilt automatiskt urverk som är känt för sin konsekventa precision.
+                </p>
+                <button onclick="navigate('details')" class="btn">Gå till Detaljer</button>
+            </div>
+        </section>
+        
+        <section class="design-section">
+            <h2>Designa din egen klocka</h2>
+            <p>Vill du veta mer om hur vi kan hjälpa dig?</p>
+            <button onclick="navigate('booking')" class="btn" style="background: white; color: black; border: 1px solid white;">Boka Möte</button>
+        </section>
+    </main>
+
+    <!-- 2. OM OSS -->
+    <main id="about" class="page">
+        <div class="about-text-container">
+            <h2 style="font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 2rem;">Vår Historia</h2>
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem; color: #444;">
+                L´EPOQUÉ föddes ur en passion för tidlös design och mekanisk perfektion. Som ett Ung Företagsamhet (UF) företag strävar vi efter att erbjuda klockor som inte bara visar tiden, utan också berättar en historia.
+            </p>
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem; color: #444;">
+                Vår vision är att kombinera klassisk estetik med moderna kvalitetskrav. Varje klocka är noggrant utvald och sammansatt för att ge bäraren en känsla av exklusivitet och hållbarhet.
+            </p>
+            
+            <div style="background-color: #f5f5f5; width: 100%; max-width: 500px; height: 350px; margin: 3rem auto; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #999; color: #666;">
+                <span style="font-size: 3rem; margin-bottom: 1rem;">📷</span>
+                <p>Bild på Teamet / Grundarna</p>
+                <small style="margin-top: 0.5rem; color: #999;">(Ladda upp din egen bild)</small>
+            </div>
+        </div>
+    </main>
+
+    <!-- 3. DETALJER -->
+    <main id="details" class="page">
+        <section class="content-section" style="padding-top: 2rem;">
+            <div class="content-text">
+                <h2>Teknisk Specifikation</h2>
+                <p>
+                    Här går vi på djupet med vad som gör L´EPOQUÉ unikt. Vi använder oss av marknadsledande komponenter för att säkerställa att din klocka håller livet ut.
+                </p>
+                
+                <table class="specs-table">
+                    <tr>
+                        <th>Urverk</th>
+                        <td>Seiko NH35A (Herr) / NH05A (Dam)</td>
+                    </tr>
+                    <tr>
+                        <th>Typ</th>
+                        <td>Automatiskt (Självuppdragande)</td>
+                    </tr>
+                    <tr>
+                        <th>Gångreserv</th>
+                        <td>Ca 41 timmar</td>
+                    </tr>
+                    <tr>
+                        <th>Juveler</th>
+                        <td>24 st (Minskar friktion)</td>
+                    </tr>
+                    <tr>
+                        <th>Glas</th>
+                        <td>Safirglas (Reptåligt)</td>
+                    </tr>
+                    <tr>
+                        <th>Material</th>
+                        <td>316L Rostfritt Stål</td>
+                    </tr>
+                    <tr>
+                        <th>Vattentålighet</th>
+                        <td>10 ATM (100 meter)</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="content-image-wrapper">
+                <img src="https://e28874c360.cbaul-cdnwnd.com/43537c620e9a21ebe5dd33a099267bcf/200000032-6c8ba6c8bc/bakifr%C3%A5n%20zoom%20zoom.png?ph=e28874c360" alt="Urverk Detalj" class="content-image">
+            </div>
+        </section>
+    </main>
+
+    <!-- 4. BOKA MÖTE -->
+    <main id="booking" class="page">
+        <section class="design-section" style="padding-top: 4rem;">
+            <h2>Designa din egen klocka</h2>
+            <p>Vi erbjuder personliga konsultationer för att skräddarsy din klocka.</p>
+            
+            <form class="contact-form" onsubmit="window.sendToDatabase(event)">
+                <div class="form-group">
+                    <label>Namn</label>
+                    <input type="text" name="namn" placeholder="Ditt namn" style="color: #333;" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="Din email" style="color: #333;" required>
+                </div>
+                <div class="form-group">
+                    <label>Meddelande / Önskemål</label>
+                    <textarea name="meddelande" rows="5" placeholder="Berätta vad du söker..." style="color: #333;" required></textarea>
+                </div>
+                <button type="submit" class="btn" style="background: white; color: black; border: 1px solid white; width: 100%;">Skicka Förfrågan</button>
+            </form>
+
+            <p style="margin-top: 3rem;">Eller maila oss direkt:</p>
+            <a href="mailto:Epoqueuf@gmail.com" class="email-link">Epoqueuf@gmail.com</a>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 L´EPOQUÉ UF</p>
+        <div style="margin-top: 10px;">
+            <a onclick="alert('Cookie settings')">Cookies</a>
+        </div>
+    </footer>
+
+    <!-- JavaScript för Navigation -->
+    <script>
+        let lastScrollTop = 0;
+        const header = document.querySelector('header');
+
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.scrollY || document.documentElement.scrollTop;
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                header.classList.add('nav-hidden');
+            } else {
+                header.classList.remove('nav-hidden');
+            }
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+        });
+
+        function navigate(pageId) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) targetPage.classList.add('active');
+            const navLinks = document.querySelectorAll('nav ul li a');
+            navLinks.forEach(link => link.classList.remove('active'));
+            const activeLink = document.getElementById('nav-' + pageId);
+            if (activeLink) activeLink.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+    </script>
+
+</body>
+</html>
