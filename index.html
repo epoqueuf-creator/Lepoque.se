@@ -7,11 +7,11 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- DIN EGNA KONFIGURATION (NU IFYLLD) ---
-        const myFirebaseConfig = {
+        // --- DIN EGNA KONFIGURATION (HÅRDKODAD FÖR ATT GARANTERA KOPPLING) ---
+        const firebaseConfig = {
             apiKey: "AIzaSyDIfUUZP29Oe6oF7MLhOSWTK8Rt3ReLWM8",
             authDomain: "lepoque-cc738.firebaseapp.com",
             projectId: "lepoque-cc738",
@@ -21,36 +21,17 @@
             measurementId: "G-W5L1FQF4C4"
         };
 
-        // --- STARTKOD ---
-        let firebaseConfig = myFirebaseConfig;
-        
-        // Stöd för förhandsgranskning
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-        }
-
+        // Initiera appen direkt med dina nycklar
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // Hantera både lokal och hostad miljö
-        const collectionName = (firebaseConfig === myFirebaseConfig) ? 'inquiries' : 'public/data/inquiries';
-        const appIdPrefix = (firebaseConfig === myFirebaseConfig) ? '' : (typeof __app_id !== 'undefined' ? 'artifacts/' + __app_id + '/' : '');
 
-        // Autentisering
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                console.log("Databasanslutning klar.");
-            } catch (err) {
-                console.error("Auth fel:", err);
-            }
-        };
-        initAuth();
+        // Logga in anonymt direkt
+        signInAnonymously(auth).then(() => {
+            console.log("Hemsidan: Ansluten till din databas.");
+        }).catch((error) => {
+            console.error("Hemsidan: Kunde inte ansluta:", error);
+        });
 
         // Skicka funktionen
         window.sendToDatabase = async function(event) {
@@ -66,17 +47,9 @@
             const email = form.email.value;
             const meddelande = form.meddelande.value;
 
-            if (!auth.currentUser) await initAuth();
-
             try {
-                let collRef;
-                if (firebaseConfig === myFirebaseConfig) {
-                    collRef = collection(db, 'inquiries');
-                } else {
-                    collRef = collection(db, 'artifacts', typeof __app_id !== 'undefined' ? __app_id : 'default', 'public', 'data', 'inquiries');
-                }
-
-                await addDoc(collRef, {
+                // VIKTIGT: Vi skriver nu alltid till 'inquiries' i din rot-databas
+                await addDoc(collection(db, 'inquiries'), {
                     namn: namn,
                     email: email,
                     meddelande: meddelande,
@@ -84,13 +57,11 @@
                     status: 'ny'
                 });
 
-                // ÅTERSTÄLLT TILL ALERT
                 alert("Tack! Ditt meddelande har skickats.");
                 form.reset();
             } catch (error) {
                 console.error("Fel vid sparning:", error);
-                // ÅTERSTÄLLT TILL ALERT
-                alert("Kunde inte skicka: Kontrollera din anslutning eller Firebase-inställningar.");
+                alert("Kunde inte skicka: " + error.message + "\n(Kontrollera att 'Anonymous auth' är påslaget i Firebase Console)");
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -98,6 +69,7 @@
         }
     </script>
     <style>
+        /* --- GRUNDLÄGGANDE STIL --- */
         :root {
             --bg-color: #ffffff;
             --text-color: #000000;
