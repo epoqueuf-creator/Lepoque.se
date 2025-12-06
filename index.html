@@ -3,49 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L´EPOQUÉ - Exklusiva Klockor</title>
+    <title>L´EPOQUÉ Exklusiva Klockor</title>
     
-    <script>
-        // --- INSTRUKTIONER ---
-        // 1. Skapa Google Sheet & Web App enligt guiden i chatten.
-        // 2. Klistra in din Web App URL nedanför mellan citattecknen ''.
-        
-        const scriptURL = 'KLISTRA_IN_DIN_URL_HÄR';
-
-        window.onload = function() {
-            const form = document.forms['submit-to-google-sheet'];
-            
-            if (form) {
-                form.addEventListener('submit', e => {
-                    e.preventDefault();
-                    
-                    const btn = form.querySelector('button');
-                    const originalText = btn.innerText;
-                    btn.innerText = "Skickar...";
-                    btn.disabled = true;
-
-                    // Skicka data till Google Script
-                    fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-                        .then(response => {
-                            alert("Tack! Din förfrågan har mottagits.");
-                            form.reset();
-                            btn.innerText = originalText;
-                            btn.disabled = false;
-                        })
-                        .catch(error => {
-                            console.error('Error!', error.message);
-                            // Ibland blockerar webbläsare svaret (CORS), men datan skickas ändå.
-                            // Vi antar att det gick bra om vi inte får nätverksfel.
-                            alert("Tack! Din förfrågan har mottagits.");
-                            form.reset();
-                            btn.innerText = originalText;
-                            btn.disabled = false;
-                        });
-                });
-            }
-        };
-    </script>
-
     <style>
         /* --- GRUNDLÄGGANDE STIL --- */
         :root {
@@ -151,11 +110,6 @@
         .design-section h2 { font-family: var(--font-heading); font-size: 3rem; margin-bottom: 2rem; }
         .email-link { font-weight: bold; font-size: 1.3rem; border-bottom: 1px solid #fff; display: inline-block; margin-top: 1rem; }
 
-        .contact-form { max-width: 600px; margin: 2rem auto; text-align: left; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; font-family: inherit; }
-
         footer { text-align: center; padding: 2rem; font-size: 0.8rem; color: #666; border-top: 1px solid #eee; margin-top: auto; }
 
         @media (max-width: 768px) {
@@ -186,13 +140,11 @@
     <!-- 1. HEM -->
     <main id="home" class="page active">
         <section style="text-align: center; max-width: 800px; margin: 4rem auto 6rem auto; padding: 0 1rem;">
-            <h1 style="font-family: var(--font-heading); font-size: 2.8rem; letter-spacing: 2px; margin-bottom: 1.5rem; font-weight: normal; color: #111;">
-                Tidlös Elegans. Modern Precision.
+            <h1 style="font-family: var(--font-heading); font-size: 2.8rem; letter-spacing: 2px; margin-bottom: 1.5rem; font-weight: normal; color: #111; text-transform: uppercase;">
+                En Standard för Prestanda
             </h1>
-            <p style="font-size: 1.15rem; color: #555; line-height: 1.8; font-weight: 300;">
-                L´EPOQUÉ är mer än bara en klocka – det är en symbol för hantverk och individualitet. 
-                Vi förenar klassisk design med kompromisslös kvalitet för att skapa följeslagare som varar genom generationer. 
-                Din tid är värdefull, mät den med stil.
+            <p style="font-size: 1.15rem; color: #333; line-height: 1.8; font-weight: 400;">
+                L´EPOQUÉ kombinerar teknisk innovation med klassisk estetik. Vi erbjuder möjligheten att helt skräddarsy din klocka efter personlig vision, utan att kompromissa med kvaliteten. Våra klockor är konstruerade för att garantera precision och tillförlitlighet under alla förhållanden en tidmätare som förenar traditionellt hantverk med modern ingenjörskonst.
             </p>
         </section>
 
@@ -227,10 +179,7 @@
                 Vi kombinerar klassiskt urmakeri med modern precisionsteknik och en designfilosofi där renhet, funktion och identitet står i centrum. Resultatet är klockor som känns exklusiva redan vid första beröring, och framför allt personliga på ett sätt massproduktion aldrig kan erbjuda.
             </p>
             
-            <!-- HÄR ÄR BILDEN: Filnamnet måste matcha exakt -->
-            <img src="Bild.jpg" 
-                 alt="Grundarna av L´EPOQUÉ" 
-                 style="max-width: 100%; height: auto; display: block; margin: 3rem auto; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <!-- Ingen bild här (Clean version) -->
 
             <h2 style="font-family: var(--font-heading); font-size: 2.5rem; margin-top: 3rem; margin-bottom: 2rem;">Vad vi gör</h2>
             <p style="margin-bottom: 1.5rem; font-size: 1.1rem; color: #444;">
@@ -257,7 +206,7 @@
                 <table class="specs-table">
                     <tr>
                         <th>Urverk</th>
-                        <td>Seiko NH35A (Herr) / NH05A (Dam)</td>
+                        <td>Seiko NH35A / NH05A</td>
                     </tr>
                     <tr>
                         <th>Typ</th>
@@ -269,7 +218,7 @@
                     </tr>
                     <tr>
                         <th>Juveler</th>
-                        <td>24 st (Minskar friktion)</td>
+                        <td>24 st</td>
                     </tr>
                     <tr>
                         <th>Glas</th>
@@ -277,7 +226,7 @@
                     </tr>
                     <tr>
                         <th>Material</th>
-                        <td>316L Rostfritt Stål</td>
+                        <td>Rostfritt Stål</td>
                     </tr>
                     <tr>
                         <th>Vattentålighet</th>
@@ -297,23 +246,9 @@
             <h2>Designa din egen klocka</h2>
             <p>Vi erbjuder personliga konsultationer för att skräddarsy din klocka.</p>
             
-            <form name="submit-to-google-sheet" class="contact-form">
-                <div class="form-group">
-                    <label>Namn</label>
-                    <input type="text" name="namn" placeholder="Ditt namn" style="color: #333;" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" placeholder="Din email" style="color: #333;" required>
-                </div>
-                <div class="form-group">
-                    <label>Meddelande / Önskemål</label>
-                    <textarea name="meddelande" rows="5" placeholder="Berätta vad du söker..." style="color: #333;" required></textarea>
-                </div>
-                <button type="submit" class="btn" style="background: white; color: black; border: 1px solid white; width: 100%;">Skicka Förfrågan</button>
-            </form>
+            <!-- Inget formulär (Clean version) -->
 
-            <p style="margin-top: 3rem;">Eller maila oss direkt:</p>
+            <p style="margin-top: 3rem;">Kontakta oss direkt via mail:</p>
             <a href="mailto:Epoqueuf@gmail.com" class="email-link">Epoqueuf@gmail.com</a>
         </section>
     </main>
@@ -356,5 +291,3 @@
 
 </body>
 </html>
-
-
